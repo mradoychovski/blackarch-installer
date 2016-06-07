@@ -55,11 +55,11 @@ INSTALL_BLACKMAN="3"
 # chosen keymap
 KEYMAP=""
 
-# set keymap
-SET_KEYMAP="1"
+# default keymap
+DFLT_KEYMAP="us"
 
 # list keymaps
-LIST_KEYMAP="2"
+declare -a LIST_KEYMAP=( $(localectl list-keymaps) )
 
 # network interfaces
 NET_IFS=""
@@ -266,74 +266,53 @@ check_uid()
 # welcome and ask for installation mode
 ask_install_mode()
 {
-    while [ \
-        "${INSTALL_MODE}" != "${INSTALL_REPO}" -a \
-        "${INSTALL_MODE}" != "${INSTALL_BLACKMAN}" -a \
-        "${INSTALL_MODE}" != "${INSTALL_LIVE_ISO}" ]
-    do
-        title "Welcome to the BlackArch Linux installation!"
-        wprintf "[+] Available installation modes:"
-        printf "\n
-    1. Install from repository using pacman
-    2. Install from Live-ISO
-    3. Install from sources using blackman\n\n"
-        wprintf "[?] Choose an installation mode: "
-        read INSTALL_MODE
-    clear
-    done
+	while [ \
+		"${INSTALL_MODE}" != "${INSTALL_REPO}" -a \
+		"${INSTALL_MODE}" != "${INSTALL_BLACKMAN}" -a \
+		"${INSTALL_MODE}" != "${INSTALL_LIVE_ISO}" ]
+	do
+		title "Welcome to the BlackArch Linux installation!"
+		wprintf "[+] Available installation modes:"
+		printf "\n
+	1. Install from repository using pacman
+	2. Install from Live-ISO
+	3. Install from sources using blackman\n\n"
+		wprintf "[?] Choose an installation mode: "
+		read INSTALL_MODE
+	#clear
+	done
 
-    return $SUCCESS
-}
-
-
-# ask for keymap to use
-ask_keymap()
-{
-    while [ \
-        "${keymap_opt}" != "${SET_KEYMAP}" -a \
-        "${keymap_opt}" != "${LIST_KEYMAP}" ]
-    do
-        title "Keymap Setup"
-        wprintf "[+] Available keymap options:"
-        printf "\n
-    1. Set a keymap
-    2. List available keymaps\n\n"
-        wprintf "[?] Make a choice: "
-        read keymap_opt
-
-        if [ "${keymap_opt}" = "${SET_KEYMAP}" ]
-        then
-            break
-        fi
-        if [ "${keymap_opt}" = "${LIST_KEYMAP}" ]
-        then
-            localectl list-keymaps
-            echo
-        fi
-        clear
-    done
-
-    clear
-
-    return $SUCCESS
-}
+	return $SUCCESS
+}																				
 
 
 # set keymap to use
 set_keymap()
 {
     title "Keymap Setup"
-    wprintf "[?] Set keymap [us]: "
-    read KEYMAP
-
-    # default keymap
-    if [ -z "${KEYMAP}" ]
-    then
-        KEYMAP="us"
-    fi
-
-    localectl set-keymap --no-convert "${KEYMAP}"
-    loadkeys "${KEYMAP}"
+	wprintf "[+] Available keymap options:"
+	echo
+	PS3='[?] Set keymap (Enter a number): '
+	list_keymaps_len="${#LIST_KEYMAP[@]}"
+	select keymap in ${LIST_KEYMAP[@]}; do
+		case "${map}" in
+	        $LIST_KEYMAP[1-$list_keymaps_len])
+				localectl set-keymap --no-convert "${keymap}"
+		   		loadkeys ${keymap}
+		        echo "You picked: ${keymap}"
+			    break
+				;;
+		 	*)
+				localectl set-keymap --no-convert ${DFLT_KEYMAP}
+				loadkeys "${DFLT_KEYMAP}"
+	            echo "You picked: ${DFLT_KEYMAP}"
+				break
+				;;
+#			*)
+#				echo "Invalid choice '${REPLY}', please pick one of the above"
+#				;;
+		esac
+	done
 
     return $SUCCESS
 }
@@ -1716,9 +1695,9 @@ main()
     ask_install_mode
 
     # keymap
-    ask_keymap
+    #ask_keymap
     set_keymap
-    clear
+    #clear
 
     # network
     ask_hostname
