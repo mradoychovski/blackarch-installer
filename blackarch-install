@@ -93,8 +93,8 @@ NAMESERVER=""
 # LUKS flag
 LUKS=""
 
-# avalable hard drive
-HD_DEVS=""
+# avalable hard drives
+declare -a HD_DEVS=( $(lsblk | grep disk | awk '{print $1}') )
 
 # chosen hard drive device
 HD_DEV=""
@@ -287,25 +287,25 @@ ask_install_mode()
 set_keymap()
 {
     title "Keymap Setup"
-	wprintf "[+] Available keymap options:"
-	PS3="[?] Set keymap [us]: "
-	list_keymap_len="${#LIST_KEYMAP[@]}"
+    wprintf "[+] Available keymap options:"
+    PS3="[?] Choose a keymap number: "
+    list_keymap_len="${#LIST_KEYMAP[@]}"
 	
-	select map in ${LIST_KEYMAP[@]}; do
-		case "${map}" in
-	        $LIST_KEYMAP[1-$list_keymap_len])
-				KEYMAP=${map}
-				break
-				;;
-			*)
-				break
-				;;
-		esac
-	done
+    select map in ${LIST_KEYMAP[@]}; do
+	    case "${map}" in
+            $LIST_KEYMAP[1-$list_keymap_len])
+		        KEYMAP=${map}
+                break
+		        ;;
+	        *)
+		        break
+		        ;;
+        esac
+    done
 
-	localectl set-keymap --no-convert "${KEYMAP}"
-	loadkeys ${KEYMAP}
-	echo "You picked: ${KEYMAP}"
+    localectl set-keymap --no-convert "${KEYMAP}"
+    loadkeys ${KEYMAP}
+    echo "You picked: ${KEYMAP}"
 
     return $SUCCESS
 }
@@ -547,41 +547,27 @@ ask_luks()
 }
 
 
-# get available hard disks
-get_hd_devs()
-{
-    HD_DEVS="`lsblk | grep disk | awk '{print $1}'`"
-
-    return $SUCCESS
-}
-
-
 # ask user for device to format and setup
 ask_hd_dev()
 {
-    while true
-    do
-        title "Hard Drive Setup"
+    title "Hard Drive Setup"
 
-        wprintf "[+] Available hard drives for installation:"
-        printf "\n\n"
+    wprintf "[+] Available hard drives for installation:"
+    printf "\n\n"
 
-        for i in ${HD_DEVS}
-        do
-            echo "    > ${i}"
-        done
-        echo
-        wprintf "[?] Please choose a device: "
-        read HD_DEV
-        if echo ${HD_DEVS} | grep "\<${HD_DEV}\>" > /dev/null
-        then
-            HD_DEV="/dev/${HD_DEV}"
-            clear
-            break
-        fi
-        clear
+    PS='[?] Please choose a device number: '
+    hd_devs_len="${#HD_DEVS[@]}"
+    select dev in ${HD_DEVS[@]}; do
+        case "${dev}" in
+            $HD_DEVS[1-$hd_devs_len])
+                HD_DEV="/dev/${dev}"
+                break
+                ;;
+            *)
+                echo "Invalid choice '${REPLY}', please pick one of the above"
+                ;;
+        esac
     done
-
 
     return $SUCCESS
 }
