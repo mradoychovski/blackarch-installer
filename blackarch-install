@@ -53,10 +53,7 @@ INSTALL_LIVE_ISO="2"
 INSTALL_BLACKMAN="3"
 
 # chosen keymap
-KEYMAP=""
-
-# default keymap
-DFLT_KEYMAP="us"
+KEYMAP="us"
 
 # list keymaps
 declare -a LIST_KEYMAP=( $(localectl list-keymaps) )
@@ -291,28 +288,24 @@ set_keymap()
 {
     title "Keymap Setup"
 	wprintf "[+] Available keymap options:"
-	echo
-	PS3='[?] Set keymap (Enter a number): '
-	list_keymaps_len="${#LIST_KEYMAP[@]}"
-	select keymap in ${LIST_KEYMAP[@]}; do
+	PS3="[?] Set keymap [us]: "
+	list_keymap_len="${#LIST_KEYMAP[@]}"
+	
+	select map in ${LIST_KEYMAP[@]}; do
 		case "${map}" in
-	        $LIST_KEYMAP[1-$list_keymaps_len])
-				localectl set-keymap --no-convert "${keymap}"
-		   		loadkeys ${keymap}
-		        echo "You picked: ${keymap}"
-			    break
-				;;
-		 	*)
-				localectl set-keymap --no-convert ${DFLT_KEYMAP}
-				loadkeys "${DFLT_KEYMAP}"
-	            echo "You picked: ${DFLT_KEYMAP}"
+	        $LIST_KEYMAP[1-$list_keymap_len])
+				KEYMAP=${map}
 				break
 				;;
-#			*)
-#				echo "Invalid choice '${REPLY}', please pick one of the above"
-#				;;
+			*)
+				break
+				;;
 		esac
 	done
+
+	localectl set-keymap --no-convert "${KEYMAP}"
+	loadkeys ${KEYMAP}
+	echo "You picked: ${KEYMAP}"
 
     return $SUCCESS
 }
